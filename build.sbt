@@ -62,7 +62,6 @@ lazy val fx = (project in file("fx"))
         "org.openjfx" % s"javafx-$m" % "12.0.2" classifier osName
       )
     },
-    assemblyJarName in assembly := s"iz-${name.value}-${version.value}.jar",
-    mainClass in assembly := Some("pw._0x9.iz.Main")
+    assemblyJarName in assembly := s"iz-${name.value}-${version.value}.jar"
   )
   .dependsOn(lib)
