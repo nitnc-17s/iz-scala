@@ -15,9 +15,9 @@ class GameMasterActor(stateActor1: ActorRef, stateActor2: ActorRef,
   def receive: Receive = {
     case Start => loop()
   }
-  private[this] def loop() {
+  private[this] def loop(): Unit = {
     var s = getStatesAndJudge._2
-    while (s.status == ActiveStatus) {
+    while (s.status == Active) {
       val t0 = System.currentTimeMillis
       val future = (agentActor ? BestMoves(getState2, config))(60 second)
       Await.result(future, 60 second)

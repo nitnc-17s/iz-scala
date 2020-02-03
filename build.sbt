@@ -1,15 +1,11 @@
 import sbt.Keys.libraryDependencies
 
-initialCommands in console :=
-  """import pw._0x9.iz._
-    |import Stage._
-    |""".stripMargin
-
 lazy val commonSettings = Seq(
   organization := "pw._0x9",
-  version := "0.1.0-SNAPSHOT",
+  version := "0.2.0-SNAPSHOT",
   scalaVersion := "2.13.1",
-  test in assembly := {}
+  test in assembly := {},
+  scalacOptions ++= Seq("-deprecation")
 )
 
 lazy val assemblySettings = Seq(

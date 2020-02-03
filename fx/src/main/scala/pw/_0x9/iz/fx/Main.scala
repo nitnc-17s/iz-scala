@@ -67,15 +67,13 @@ object Main extends JFXApp {
     createMiniGrid
   )
   val holdGrid: Canvas = createMiniGrid
-  val alreadyHoldText: Text = new Text {
-    stroke = White
-  }
-  val gameStatusText: Text = new Text {
-    stroke = White
-  }
-  val lineCountsText: Text = new Text {
-    stroke = White
-  }
+  val alreadyHoldText: Text = new Text { stroke = White }
+  val gameStatusText: Text = new Text { stroke = White }
+  val lineCountsText: Text = new Text { stroke = White }
+  val clearTypeText: Text = new Text { stroke = White }
+  val backToBackText: Text = new Text { stroke = White }
+  val allClearText: Text = new Text { stroke = White }
+  val comboText: Text = new Text { stroke = White }
   val cpuGameGrid: Canvas = new Canvas(w, h) {
     margin = Insets(0, BLOCK_SIZE, 0, BLOCK_SIZE)
   }
@@ -108,6 +106,19 @@ object Main extends JFXApp {
               new TextFlow {
                 textAlignment = TextAlignment.Center
                 children = alreadyHoldText
+              },
+              new TextFlow {
+                margin = Insets(BLOCK_SIZE, 0, 0, 0)
+                children = clearTypeText
+              },
+              new TextFlow {
+                children = backToBackText
+              },
+              new TextFlow {
+                children = allClearText
+              },
+              new TextFlow {
+                children = comboText
               }
             )
           }
@@ -145,7 +156,7 @@ object Main extends JFXApp {
   }
   timer.start()
 
-  private def onPaint() {
+  private def onPaint(): Unit = {
     val (view1, view2) = ui.views
 
     drawGame(view1, gameGrid)
@@ -255,13 +266,31 @@ object Main extends JFXApp {
     def drawText(): Unit = {
       val view = view1
       gameStatusText.text = view.status match {
-        case ActiveStatus => "Status: Active"
+        case Active => "Status: Active"
         case GameOver => "Status: Game Over"
         case Victory => "Status: Victory"
       }
       lineCountsText.text = s"Lines: ${view.lineCount}"
       alreadyHoldText.text =
         if (view.alreadyHold) "Already Hold" else ""
+      clearTypeText.text = view.lastClear match {
+        case NoClear         => ""
+        case Single          => "Single"
+        case Double          => "Double"
+        case Triple          => "Triple"
+        case Tetris          => "TETRIS!"
+        case TSpinSingle     => "T-Spin Single!"
+        case MiniTSpinSingle => "Mini T-Spin Single"
+        case TSpinDouble     => "T-Spin Double!!"
+        case MiniTSpinDouble => "Mini T-Spin Double"
+        case TSpinTriple     => "T-Spin Triple!!!"
+      }
+      backToBackText.text =
+        if (view.backToBack) "Back-to-Back" else ""
+      allClearText.text =
+        if (view.allClear) "ALL CLEAR!!!" else ""
+      comboText.text =
+        if (view.combo >= 1) s"${view.combo} Ren" else ""
     }
   }
 }

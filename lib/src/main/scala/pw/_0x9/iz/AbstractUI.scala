@@ -12,15 +12,23 @@ class AbstractUI(config: Config) {
   import ExecutionContext.Implicits.global
   implicit val timeout: Timeout = Timeout(100 millisecond)
 
-  private[this] val initialState = Stage.newState(Nil,
-    (10, 23), Stage.randomStream(new scala.util.Random))
+  private[this] val gridSize = (10, 40)
+  private[this] val initialState1 = Stage.newState(
+    Nil,
+    // 20 play field rows and 20 buffer zone rows
+    gridSize, Stage.randomStream(new scala.util.Random),
+    isPlayer = true
+  )
+  private[this] val initialState2 = Stage.newState(
+    Nil, gridSize, Stage.randomStream(new scala.util.Random)
+  )
   private[this] val system = ActorSystem("IZSystem")
   private[this] val stateActor1 = system.actorOf(Props(new StateActor(
-    initialState.copy(isPlayer = true))), name = "stateActor1")
+    initialState1)), name = "stateActor1")
   private[this] val stageActor1 = system.actorOf(Props(new StageActor(
     stateActor1)), name = "stageActor1")
   private[this] val stateActor2 = system.actorOf(Props(new StateActor(
-    initialState)), name = "stateActor2")
+    initialState2)), name = "stateActor2")
   private[this] val stageActor2 = system.actorOf(Props(new StageActor(
     stateActor2)), name = "stageActor2")
   private[this] val agentActor = system.actorOf(Props(new AgentActor(
@@ -34,13 +42,13 @@ class AbstractUI(config: Config) {
 
   masterActor ! Start
 
-  def left()      { stageActor1 ! MoveLeft }
-  def right()     { stageActor1 ! MoveRight }
-  def rotateCW()  { stageActor1 ! RotateCW }
-  def rotateCCW() { stageActor1 ! RotateCCW }
-  def hold()      { stageActor1 ! Hold }
-  def softDrop()  { stageActor1 ! Tick }
-  def hardDrop()  { stageActor1 ! Drop }
+  def left():      Unit = { stageActor1 ! MoveLeft }
+  def right():     Unit = { stageActor1 ! MoveRight }
+  def rotateCW():  Unit = { stageActor1 ! RotateCW }
+  def rotateCCW(): Unit = { stageActor1 ! RotateCCW }
+  def hold():      Unit = { stageActor1 ! Hold }
+  def softDrop():  Unit = { stageActor1 ! Tick }
+  def hardDrop():  Unit = { stageActor1 ! Drop }
   def views: (GameView, GameView) =
     (Await.result((stateActor1 ? GetView).mapTo[GameView], timeout.duration),
       Await.result((stateActor2 ? GetView).mapTo[GameView], timeout.duration))
