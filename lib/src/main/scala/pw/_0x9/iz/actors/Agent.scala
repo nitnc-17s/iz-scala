@@ -12,11 +12,11 @@ class AgentActor(stageActor: ActorRef) extends Actor {
   def receive: Receive = {
     case BestMoves(s, config) =>
       agent.bestMoves(s, config.maxThinkTime) match {
-        case Seq(Tick) => // do nothing
-        case Seq(Drop) => config.onDrop foreach { stageActor ! _ }
-        case ms        =>
+        case Seq(Tick)     => // do nothing
+        case Seq(HardDrop) => config.onDrop foreach { stageActor ! _ }
+        case ms            =>
           ms foreach {
-            case Tick | Drop => // do nothing
+            case Tick | HardDrop => // do nothing
             case m =>
               stageActor ! m
               Thread.sleep(config.minActionTime)

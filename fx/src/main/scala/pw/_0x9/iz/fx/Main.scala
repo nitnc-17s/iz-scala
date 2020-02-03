@@ -204,7 +204,7 @@ object Main extends JFXApp {
 
         if (isGhost) {
           val prevGlobalAlpha = g.globalAlpha
-          g.globalAlpha = 0.25
+          g.globalAlpha = 0.2
           g.drawImage(blockImage, b.pos._1 * blockSize, h - (b.pos._2 + 1) * blockSize,
             blockSize, blockSize)
           g.globalAlpha = prevGlobalAlpha

@@ -2,7 +2,7 @@ import sbt.Keys.libraryDependencies
 
 lazy val commonSettings = Seq(
   organization := "pw._0x9",
-  version := "0.2.0-SNAPSHOT",
+  version := "0.3.0-SNAPSHOT",
   scalaVersion := "2.13.1",
   test in assembly := {},
   scalacOptions ++= Seq("-deprecation")

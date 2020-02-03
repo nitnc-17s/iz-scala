@@ -12,6 +12,12 @@ case object TSpinDouble extends ClearType
 case object MiniTSpinDouble extends ClearType
 case object TSpinTriple extends ClearType
 
+sealed trait LockTimerOperation
+case object NoOperation extends LockTimerOperation
+case object StartTimer extends LockTimerOperation
+case object StopTimer extends LockTimerOperation
+case object ResetTimer extends LockTimerOperation
+
 case class GameState(blocks: Seq[Block], gridSize: (Int, Int),
   currentPiece: Piece, nextPieces: Seq[Piece], kinds: Seq[PieceKind],
   status: GameStatus = Active,
@@ -28,7 +34,10 @@ case class GameState(blocks: Seq[Block], gridSize: (Int, Int),
   allClear: Boolean = false,
   combo: Int = 0,
   hasNotYetAttacked: Boolean = false,
-  isPlayer: Boolean = false) {
+  isPlayer: Boolean = false,
+  lockTimerOperation: LockTimerOperation = NoOperation,
+  lastOperationIsMoveOrRotate: Boolean = false
+) {
   def lineCount: Int =
     lineCounts.zipWithIndex map { case (n, i) => n * i } sum
   def view: GameView = {

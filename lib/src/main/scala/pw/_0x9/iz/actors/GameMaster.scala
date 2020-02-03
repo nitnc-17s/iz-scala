@@ -8,12 +8,12 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 sealed trait GameMasterMessage
-case object Start
+case object StartGM
 
 class GameMasterActor(stateActor1: ActorRef, stateActor2: ActorRef,
   agentActor: ActorRef, config: Config) extends Actor {
   def receive: Receive = {
-    case Start => loop()
+    case StartGM => loop()
   }
   private[this] def loop(): Unit = {
     var s = getStatesAndJudge._2

@@ -20,16 +20,17 @@ object Stage {
       copy(blocks = blocks)
     spawn(withNext)
   }
-  val moveLeft: GameState => GameState = ghost compose isNotRotate compose transit { _.moveBy(-1.0, 0.0) }
-  val moveRight: GameState => GameState = ghost compose isNotRotate compose transit { _.moveBy(1.0, 0.0) }
+  val moveLeft: GameState => GameState = ghost compose isMove compose transit { _.moveBy(-1.0, 0.0) }
+  val moveRight: GameState => GameState = ghost compose isMove compose transit { _.moveBy(1.0, 0.0) }
   val rotateCW: GameState => GameState = ghost compose rotate(Piece.RotateCW)
   val rotateCCW: GameState => GameState = ghost compose rotate(Piece.RotateCCW)
-  val hold: GameState => GameState = ghost compose isNotRotate compose holdSwap
-  val tick: GameState => GameState = ghost compose isNotRotate compose transit(_.moveBy(0.0, -1.0),
-    Function.chain(clearFullRow :: attack :: spawn :: resetAlreadyHold :: Nil))
-  val drop: GameState => GameState = (s0: GameState) =>
+  val hold: GameState => GameState = ghost compose isNeitherMoveNorRotate compose holdSwap
+  val lock: GameState => GameState = Function.chain(stopLockTimer :: clearFullRow :: attack :: spawn :: resetAlreadyHold :: Nil)
+  val tick: GameState => GameState = ghost compose isNeitherMoveNorRotate compose transit(_.moveBy(0.0, -1.0), startLockTimer)
+  val softDrop: GameState => GameState = ghost compose isNeitherMoveNorRotate compose transit { _.moveBy(0.0, -1.0) }
+  val hardDrop: GameState => GameState = (s0: GameState) =>
     Function.chain((Nil padTo (s0.gridSize._2, transit {_.moveBy(0.0, -1.0)})) ++
-      List(tick))(s0)
+      List(lock, ghost))(s0)
   val notifyAttack: GameState => GameState = (s0: GameState) =>
     s0.copy(pendingAttacksOnYourself = s0.pendingAttacksOnYourself + 1)
   private[this] lazy val clearFullRow: GameState => GameState =
@@ -160,20 +161,22 @@ object Stage {
         currentPiece = s.nextPieces.head.copy(pos = dropOffPos),
         nextPieces = s.kinds.take(nextPiecesLength).map(Piece((2, 1), _)),
         kinds = s.kinds.drop(1))
-      validate(s1) map (x =>
-        x.load(x.currentPiece)) getOrElse {
+      validate(s1) map (x => x.load(x.currentPiece)) getOrElse
         s1.load(s1.currentPiece).copy(status = GameOver)
-      }
     }
   private[this] lazy val ghost: GameState => GameState =
     (s: GameState) => {
-      if (s.isPlayer) {
-        val s1 = Function.chain(Nil padTo(s.gridSize._2, transit {
-          _.moveBy(0.0, -1.0)
-        }))(s)
-        s.copy(ghost = s1.currentPiece.current)
+      s.status match {
+        case Active =>
+          if (s.isPlayer) {
+            val s1 = Function.chain(Nil padTo(s.gridSize._2, transit {
+              _.moveBy(0.0, -1.0)
+            }))(s)
+            s.copy(ghost = s1.currentPiece.current)
+          }
+          else s
+        case _ => s
       }
-      else s
     }
   private[this] lazy val holdSwap: GameState => GameState =
     (s: GameState) => {
@@ -196,12 +199,27 @@ object Stage {
     }
   private[this] lazy val resetAlreadyHold: GameState => GameState =
     (s: GameState) => s.copy(alreadyHold = false)
-  private[this] lazy val isNotRotate: GameState => GameState =
-    (s: GameState) => s.copy(lastOperationIsRotate = false)
+  private[this] lazy val isNeitherMoveNorRotate: GameState => GameState =
+    (s: GameState) => s.copy(lastOperationIsRotate = false, lastOperationIsMoveOrRotate = false)
+  private[this] lazy val isMove: GameState => GameState =
+    (s: GameState) => s.copy(
+      lastOperationIsRotate = false,
+      lastOperationIsMoveOrRotate = true,
+      lockTimerOperation = ResetTimer
+    )
+  private[this] lazy val startLockTimer: GameState => GameState =
+    (s: GameState) => s.copy(lockTimerOperation = StartTimer)
+  private[this] lazy val stopLockTimer: GameState => GameState =
+    (s: GameState) => s.copy(lockTimerOperation = StopTimer)
   private[this] def rotate(rotateDirection: Piece.RotateDirection): GameState => GameState =
     (s: GameState) => {
       lazy val useSRS = (s: GameState) => s.copy(lastRotateUseSRS = true)
-      val s1 = s.copy(lastOperationIsRotate = true, lastRotateUseSRS = false)
+      val s1 = s.copy(
+        lastOperationIsRotate = true,
+        lastOperationIsMoveOrRotate = true,
+        lastRotateUseSRS = false,
+        lockTimerOperation = ResetTimer
+      )
       s1.currentPiece.kind match {
         case GarbageKind => s1
         case OKind =>
@@ -245,7 +263,9 @@ object Stage {
       case RotateCCW => rotateCCW
       case Hold      => hold
       case Tick      => tick
-      case Drop      => drop
+      case SoftDrop  => softDrop
+      case HardDrop  => hardDrop
       case Attack    => notifyAttack
+      case Lock      => lock
     }
 }

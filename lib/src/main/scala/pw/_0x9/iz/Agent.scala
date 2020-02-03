@@ -36,14 +36,14 @@ class Agent {
     math.sqrt((weightedHeights ++ crevasses ++ coverups) map { x => x * x } sum)
   }
   def bestMove(s0: GameState, maxThinkTime: Long): StageMessage =
-    bestMoves(s0, maxThinkTime).headOption getOrElse {Tick}
+    bestMoves(s0, maxThinkTime).headOption getOrElse {SoftDrop}
   def bestMoves(s0: GameState, maxThinkTime: Long): Seq[StageMessage] = {
     val t0 = System.currentTimeMillis
-    var retval: Seq[StageMessage] = Tick :: Nil
+    var retval: Seq[StageMessage] = SoftDrop :: Nil
     var current: Double = minUtility
     stopWatch("bestMove") {
       val nodes = actionSeqs(s0) map { seq =>
-        val ms = seq ++ Seq(Drop)
+        val ms = seq ++ Seq(HardDrop)
         val s1 = Function.chain(ms map {toTrans})(s0)
         val u = utility(s1)
         if (u > current) {
@@ -56,7 +56,7 @@ class Agent {
         if (maxThinkTime == 0 ||
           System.currentTimeMillis - t0 < maxThinkTime)
           actionSeqs(node.state) foreach { seq =>
-            val ms = seq ++ Seq(Drop)
+            val ms = seq ++ Seq(HardDrop)
             val s2 = Function.chain(ms map {toTrans})(node.state)
             val u = utility(s2)
             if (u > current) {
@@ -67,7 +67,7 @@ class Agent {
         else ()
       }
     } // stopWatch
-    // println("selected " + retval + " " + current.toString)
+    //println("selected " + retval + " " + current.toString)
     retval
   }
   case class SearchNode(state: GameState, actions: Seq[StageMessage], score: Double)

@@ -25,8 +25,10 @@ class AbstractUI(config: Config) {
   private[this] val system = ActorSystem("IZSystem")
   private[this] val stateActor1 = system.actorOf(Props(new StateActor(
     initialState1)), name = "stateActor1")
+  private[this] val lockTimerActor1 = system.actorOf(Props(new LockTimerActor(
+    1 second)), name = "lockTimerActor1")
   private[this] val stageActor1 = system.actorOf(Props(new StageActor(
-    stateActor1)), name = "stageActor1")
+    stateActor1, Some(lockTimerActor1))), name = "stageActor1")
   private[this] val stateActor2 = system.actorOf(Props(new StateActor(
     initialState2)), name = "stateActor2")
   private[this] val stageActor2 = system.actorOf(Props(new StageActor(
@@ -36,19 +38,19 @@ class AbstractUI(config: Config) {
   private[this] val masterActor = system.actorOf(Props(new GameMasterActor(
     stateActor1, stateActor2, agentActor, config: Config)), name = "masterActor")
   private[this] val tickTimer1 = system.scheduler.scheduleAtFixedRate(
-    0 millisecond, 701 millisecond, stageActor1, Tick)
+    0 millisecond, 1000 millisecond, stageActor1, Tick)
   private[this] val tickTimer2 = system.scheduler.scheduleAtFixedRate(
-    0 millisecond, 701 millisecond, stageActor2, Tick)
+    0 millisecond, 1000 millisecond, stageActor2, Tick)
 
-  masterActor ! Start
+  masterActor ! StartGM
 
   def left():      Unit = { stageActor1 ! MoveLeft }
   def right():     Unit = { stageActor1 ! MoveRight }
   def rotateCW():  Unit = { stageActor1 ! RotateCW }
   def rotateCCW(): Unit = { stageActor1 ! RotateCCW }
   def hold():      Unit = { stageActor1 ! Hold }
-  def softDrop():  Unit = { stageActor1 ! Tick }
-  def hardDrop():  Unit = { stageActor1 ! Drop }
+  def softDrop():  Unit = { stageActor1 ! SoftDrop }
+  def hardDrop():  Unit = { stageActor1 ! HardDrop }
   def views: (GameView, GameView) =
     (Await.result((stateActor1 ? GetView).mapTo[GameView], timeout.duration),
       Await.result((stateActor2 ? GetView).mapTo[GameView], timeout.duration))
